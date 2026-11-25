@@ -44,6 +44,8 @@ jobs:
       - name: Install zsh (Linux)
         if: runner.os == 'Linux'
         run: sudo apt-get install -y --no-install-recommends zsh
+      - name: Build release binary
+        run: cargo build --release --locked
       - name: Shell integration in a real pseudo-terminal
         run: python3 tests/shell/pty_test.py target/release/pasteproof
 
