@@ -2,6 +2,14 @@
 
 **Stops "paste this command to verify you're human" attacks before they run.**
 
+> [!WARNING]
+> **Early preview (v0.1).** pasteproof works and is tested automatically on Linux and macOS,
+> but it hasn't had much real-world use or an independent security review yet. Expect rough
+> edges, possible conflicts with other shell plugins, and missed attack variants.
+> Use it as an extra safety net, not as your only protection, and please
+> [report false alarms and missed attacks](https://github.com/AnishK7/pasteproof/issues/new/choose).
+> Currently supported: Linux and macOS with bash 4+ or zsh. Windows and fish are planned.
+
 ClickFix attacks show a fake CAPTCHA or error on a hacked website, quietly copy a
 command to your clipboard and ask you to paste it into a terminal. The command
 downloads malware that steals SSH keys, tokens, browser data and crypto wallets
