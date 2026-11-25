@@ -97,7 +97,13 @@ def run(shell):
 if __name__ == "__main__":
     if not os.access(BIN, os.X_OK):
         sys.exit(f"pasteproof binary not found at {BIN}")
-    shells = ["bash"] + (["zsh"] if shutil.which("zsh") else [])
+    import subprocess
+    bash_major = int(subprocess.run(["bash", "-c", "echo ${BASH_VERSINFO[0]}"], capture_output=True, text=True).stdout.strip() or 0)
+    shells = (["bash"] if bash_major >= 4 else []) + (["zsh"] if shutil.which("zsh") else [])
+    if bash_major < 4:
+        out = subprocess.run(["bash", "--norc", "-i", "-c", f'eval "$({BIN} init bash)"'], capture_output=True, text=True)
+        assert "too old" in out.stderr, out.stderr
+        print(f"[bash] version {bash_major} < 4: integration correctly declines with a notice (skipped)")
     for sh in shells:
         run(sh)
     if "zsh" not in shells:

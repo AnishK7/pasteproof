@@ -52,4 +52,6 @@ bind '"\C-j": "\C-x\C-p\C-c\C-x\C-p\C-a"'
 bind -x '"\C-x\C-p\C-m": __pasteproof_mark_paste'
 bind '"\C-x\C-p\C-b": bracketed-paste-begin'
 bind '"\e[200~": "\C-x\C-p\C-m\C-x\C-p\C-b"'
+elif [[ $- == *i* ]] && (( BASH_VERSINFO[0] < 4 )); then
+  echo "pasteproof: bash ${BASH_VERSION%%(*} is too old (4.0+ needed). On macOS use zsh (the default shell) or 'brew install bash'. Not active in this shell." >&2
 fi
