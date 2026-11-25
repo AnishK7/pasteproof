@@ -53,7 +53,7 @@ Milestone 1 is source-only while the first signed release is prepared. **Never
 install security tools, including this one, with `curl | sh`.**
 
 ```bash
-git clone https://github.com/OWNER/pasteproof.git
+git clone https://github.com/AnishK7/pasteproof.git
 cd pasteproof
 cargo install --locked --path crates/cli
 ```
