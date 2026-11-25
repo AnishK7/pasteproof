@@ -1,0 +1,107 @@
+# Everyday developer commands. Every line must be `allow`.
+# Format: allow<TAB><command>
+allow	ls -la
+allow	cd ~/projects && git status
+allow	git clone https://github.com/rust-lang/rust.git && cd rust
+allow	git log --oneline | head -20
+allow	git commit -m "fix: handle café menu — and résumé uploads"
+allow	git push origin main
+allow	grep -rn "TODO" src | wc -l
+allow	find . -name '*.log' -mtime +7 -delete
+allow	tar -xzf archive.tar.gz -C /tmp/out
+allow	sudo apt update && sudo apt upgrade -y
+allow	sudo apt install -y build-essential pkg-config libssl-dev
+allow	brew install wget
+allow	npm install
+allow	npm run dev
+allow	npx create-next-app@latest my-app
+allow	pnpm add -D typescript
+allow	pip install -r requirements.txt
+allow	python3 -m venv .venv && source .venv/bin/activate
+allow	python3 -m http.server 8000
+allow	python3 manage.py runserver
+allow	python -c "print(sum(range(10)))"
+allow	node -e "console.log(process.version)"
+allow	node server.js
+allow	deno run --allow-net server.ts
+allow	bun run build
+allow	cargo build --release
+allow	cargo install ripgrep
+allow	docker run --rm -it ubuntu:24.04 bash
+allow	docker compose up -d
+allow	kubectl exec -it deploy/api -- sh
+allow	kubectl get pods -A | grep -v Running
+allow	ssh -i ~/.ssh/id_ed25519 deploy@server.example
+allow	ssh-keygen -t ed25519 -C "me@example.com"
+allow	cat ~/.ssh/id_ed25519.pub
+allow	scp ~/.ssh/id_ed25519.pub admin@server.example:
+allow	ssh-copy-id deploy@server.example
+allow	eval "$(ssh-agent -s)"
+allow	eval "$(starship init bash)"
+allow	eval "$(zoxide init zsh)"
+allow	eval "$(direnv hook bash)"
+allow	eval "$(/opt/homebrew/bin/brew shellenv)"
+allow	source ~/.bashrc
+allow	. ~/.profile
+allow	echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+allow	echo 'eval "$(starship init zsh)"' >> ~/.zshrc
+allow	curl -I https://example.com
+allow	curl -s https://api.github.com/repos/rust-lang/rust | jq .stargazers_count
+allow	curl -s https://api.example.com/v1/items | python3 -m json.tool
+allow	curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+allow	wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > microsoft.gpg
+allow	echo "deb [signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu noble stable" | sudo tee /etc/apt/sources.list.d/docker.list
+allow	curl -o file.zip https://example.com/file.zip && unzip file.zip
+allow	wget https://example.com/release.tar.gz && tar xzf release.tar.gz
+allow	curl -X POST -H "Content-Type: application/json" -d '{"name":"test"}' https://api.example.com/items
+allow	curl -u admin:secret http://192.168.1.10/api/status
+allow	echo aGVsbG8gd29ybGQ= | base64 -d
+allow	base64 -d secret.b64 > secret.bin
+allow	cat data.json | jq '.items[] | .name'
+allow	ps aux | grep node
+allow	history | grep curl
+allow	echo $(date) > /tmp/now.txt
+allow	cd "$(git rev-parse --show-toplevel)"
+allow	export TOKEN=$(cat ~/.config/app/token)
+allow	for f in *.png; do convert "$f" "${f%.png}.jpg"; done
+allow	sudo systemctl enable --now docker
+allow	systemctl --user restart pipewire
+allow	crontab -l
+allow	crontab -e
+allow	ls ~/.config/autostart
+allow	code .
+allow	bash script.sh
+allow	sh ./configure && make && sudo make install
+allow	make -j"$(nproc)"
+allow	printf '%-20s %s\n' name value
+allow	echo "a long aligned string                                    with spaces inside quotes"
+allow	sed -i 's/foo/bar/g' config.yml
+allow	awk '{print $1}' access.log | sort | uniq -c | sort -rn | head
+allow	xargs -0 rm -f < files.txt
+allow	rsync -avz ./dist/ deploy@server.example:/var/www/app/
+allow	ffmpeg -i in.mp4 -vf scale=1280:-1 out.mp4
+allow	openssl rand -base64 32
+allow	openssl s_client -connect example.com:443 -servername example.com </dev/null
+allow	dig +short example.com
+allow	nslookup example.com
+allow	ping -c 3 example.com
+allow	sudo ufw allow 22/tcp
+allow	sudo ufw enable
+allow	xattr -l MyApp.app
+allow	open -a "Visual Studio Code" .
+allow	Get-ChildItem -Recurse -Filter *.log | Remove-Item
+allow	winget install Git.Git
+allow	irm https://api.github.com/repos/rust-lang/rust | Select-Object stargazers_count
+allow	Invoke-WebRequest https://example.com/file.zip -OutFile file.zip
+allow	Expand-Archive file.zip -DestinationPath out
+allow	powershell -NoProfile -Command Get-Date
+allow	Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+allow	msiexec /i C:\Users\me\Downloads\app.msi
+allow	cmd /c dir C:\Users
+allow	ipconfig /all
+allow	docker build -t app:latest . && docker run -p 8080:80 app:latest
+allow	gh pr create --fill
+allow	gh auth login
+allow	terraform plan -out tf.plan
+allow	ansible-playbook -i inventory site.yml
+allow	journalctl --user -u app -f

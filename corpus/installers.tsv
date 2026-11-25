@@ -1,0 +1,31 @@
+# Official installers that legitimately download and run code.
+# These may be `caution` (that is honest) but must NEVER be `danger`.
+# Format: <maximum verdict><TAB><command>
+caution	curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+caution	curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+caution	wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh | bash
+caution	/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+caution	curl -fsSL https://get.docker.com -o get-docker.sh && sudo sh get-docker.sh
+caution	curl -fsSL https://bun.sh/install | bash
+caution	curl -LsSf https://astral.sh/uv/install.sh | sh
+caution	curl -fsSL https://deno.land/install.sh | sh
+caution	curl -fsSL https://ollama.com/install.sh | sh
+caution	curl -fsSL https://claude.ai/install.sh | bash
+caution	sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+caution	wget -qO- https://get.pnpm.io/install.sh | sh -
+caution	curl -sS https://starship.rs/install.sh | sh
+caution	curl -fsSL https://tailscale.com/install.sh | sh
+caution	curl -sSL https://install.python-poetry.org | python3 -
+caution	curl https://pyenv.run | bash
+caution	sudo bash -c "$(wget -O - https://apt.llvm.org/llvm.sh)"
+caution	curl -fsSL https://code-server.dev/install.sh | sh
+caution	curl -fsSL https://deb.nodesource.com/setup_22.x | sudo -E bash -
+caution	curl -fsSL https://fnm.vercel.app/install | bash
+caution	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+caution	irm https://get.scoop.sh | iex
+caution	iex "& {$(irm get.scoop.sh)} -RunAsAdmin"
+caution	powershell -c "irm bun.sh/install.ps1 | iex"
+caution	powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+caution	Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+caution	wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb && sudo dpkg -i google-chrome-stable_current_amd64.deb
+caution	curl -fsSL https://pkgs.tailscale.com/stable/ubuntu/noble.noarmor.gpg | sudo tee /usr/share/keyrings/tailscale-archive-keyring.gpg >/dev/null
