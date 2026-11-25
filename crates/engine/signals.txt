@@ -1,0 +1,29 @@
+# Signals the engine can raise. Rules combine these by name.
+# Format: name | plain-language meaning
+# Order is irrelevant; at most 64 signals.
+download            | Downloads something from the internet
+download_exec       | Downloads code and runs it straight away
+decode_exec         | Decodes hidden (encoded) text and runs it as a command
+encoded_command     | Contains an encoded or compressed command
+hidden_window       | Asks Windows to hide the window while it runs
+background_detach   | Detaches from the terminal to keep running in the background
+persistence         | Sets something up to start automatically (login, schedule, startup)
+rc_write            | Changes a shell startup file such as ~/.bashrc
+security_tamper     | Turns off or weakens security protection, or wipes history
+lolbin_remote       | Uses a built-in Windows program to fetch or run remote code
+raw_ip_url          | Contacts a public IP address directly instead of a domain name
+suspicious_tld      | Contacts a domain with an ending often used by throwaway malware sites
+url_shortener       | Hides the real address behind a link shortener
+punycode_host       | Uses a lookalike or international domain name
+abused_host         | Contacts a file-drop, tunnel or script host often used to deliver malware
+plain_http          | Downloads code over unencrypted http://
+whitespace_padding  | Pushes part of the command off-screen with lots of spaces
+invisible_chars     | Contains invisible Unicode characters
+confusable_chars    | Uses lookalike Unicode characters in place of normal ones
+decoy_comment       | Contains fake "verification" text such as "I am not a robot"
+obfuscation         | Disguises commands (split strings, escapes, character codes)
+beacon_post         | Sends data to a server in the same command that runs downloaded code
+credential_exfil    | Uploads private files such as SSH keys, tokens or browser data
+oversized           | Is extremely long for a single command
+multiline           | Contains several lines
+pasted              | Was pasted rather than typed (set by the caller)

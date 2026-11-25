@@ -1,0 +1,264 @@
+//! Rule compiler.
+//!
+//! Reads `signals.txt` and every `*.toml` file in the rules directory,
+//! validates them, and generates Rust code with the rules baked into the
+//! binary as static data (bitmasks + string slices). Nothing is parsed at
+//! runtime, so checks stay allocation-light and start instantly.
+
+use serde::Deserialize;
+use std::collections::{BTreeMap, BTreeSet};
+use std::fmt::Write as _;
+use std::path::{Path, PathBuf};
+use std::{env, fs};
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RuleFile {
+    schema: u32,
+    #[serde(default)]
+    rule: Vec<RuleDef>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RuleDef {
+    id: String,
+    title: String,
+    severity: String,
+    score: u32,
+    #[serde(default)]
+    platforms: Vec<String>,
+    #[serde(default)]
+    all: Vec<String>,
+    #[serde(default)]
+    any: Vec<String>,
+    #[serde(default)]
+    none: Vec<String>,
+    #[serde(default)]
+    match_any: Vec<String>,
+    #[serde(default)]
+    allowlistable: bool,
+    explain: String,
+    #[serde(default)]
+    advice: String,
+    #[serde(default)]
+    references: Vec<String>,
+    #[serde(default)]
+    test: Vec<RuleTest>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RuleTest {
+    input: String,
+    expect: String,
+    /// Repeat `input` this many times (for size-based rules).
+    #[serde(default)]
+    repeat: Option<usize>,
+}
+
+fn fail(msg: String) -> ! {
+    panic!("\n\npasteproof rule compiler: {msg}\n\n");
+}
+
+fn main() {
+    let manifest = PathBuf::from(env::var("CARGO_MANIFEST_DIR").unwrap());
+    let signals_path = manifest.join("signals.txt");
+    let rules_dir = env::var_os("PASTEPROOF_RULES_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| manifest.join("../../rules"));
+    println!("cargo:rerun-if-changed={}", signals_path.display());
+    println!("cargo:rerun-if-changed={}", rules_dir.display());
+    println!("cargo:rerun-if-env-changed=PASTEPROOF_RULES_DIR");
+
+    // ---- signals -------------------------------------------------------
+    let mut signals: Vec<(String, String)> = Vec::new();
+    let text = fs::read_to_string(&signals_path)
+        .unwrap_or_else(|e| fail(format!("cannot read {}: {e}", signals_path.display())));
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') {
+            continue;
+        }
+        let (name, desc) = line
+            .split_once('|')
+            .unwrap_or_else(|| fail(format!("bad signal line: {line}")));
+        let name = name.trim().to_string();
+        if !name.bytes().all(|b| b.is_ascii_lowercase() || b == b'_') {
+            fail(format!("signal names must be lower_snake_case: {name}"));
+        }
+        if signals.iter().any(|(n, _)| *n == name) {
+            fail(format!("duplicate signal {name}"));
+        }
+        signals.push((name, desc.trim().to_string()));
+    }
+    if signals.len() > 64 {
+        fail("more than 64 signals".into());
+    }
+    let bit: BTreeMap<&str, u64> = signals
+        .iter()
+        .enumerate()
+        .map(|(i, (n, _))| (n.as_str(), 1u64 << i))
+        .collect();
+
+    // ---- rules ---------------------------------------------------------
+    let mut files: Vec<PathBuf> = fs::read_dir(&rules_dir)
+        .unwrap_or_else(|e| {
+            fail(format!(
+                "cannot read rules dir {}: {e}",
+                rules_dir.display()
+            ))
+        })
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| p.extension().is_some_and(|x| x == "toml"))
+        .collect();
+    files.sort();
+    if files.is_empty() {
+        fail(format!("no rule files in {}", rules_dir.display()));
+    }
+
+    let mut rules: Vec<RuleDef> = Vec::new();
+    for f in &files {
+        println!("cargo:rerun-if-changed={}", f.display());
+        let src = fs::read_to_string(f).unwrap_or_else(|e| fail(format!("{}: {e}", f.display())));
+        let parsed: RuleFile =
+            toml::from_str(&src).unwrap_or_else(|e| fail(format!("{}: {e}", f.display())));
+        if parsed.schema != 1 {
+            fail(format!(
+                "{}: unsupported schema {}",
+                f.display(),
+                parsed.schema
+            ));
+        }
+        rules.extend(parsed.rule);
+    }
+
+    let mut ids = BTreeSet::new();
+    let mask = |names: &[String], id: &str, field: &str| -> u64 {
+        names.iter().fold(0u64, |m, n| {
+            m | *bit
+                .get(n.as_str())
+                .unwrap_or_else(|| fail(format!("rule {id}: unknown signal '{n}' in `{field}`")))
+        })
+    };
+    for r in &rules {
+        validate(r, &mut ids);
+    }
+    rules.sort_by(|a, b| a.id.cmp(&b.id));
+
+    // ---- generate ------------------------------------------------------
+    let mut out = String::new();
+    out.push_str("// @generated by build.rs from signals.txt and rules/*.toml. Do not edit.\n\n");
+    out.push_str("/// Signal bit constants.\n#[allow(missing_docs)]\npub mod sig {\n");
+    for (n, _) in &signals {
+        writeln!(
+            out,
+            "    pub const {}: u64 = {:#x};",
+            n.to_uppercase(),
+            bit[n.as_str()]
+        )
+        .unwrap();
+    }
+    out.push_str("}\n\n");
+    out.push_str("/// (name, meaning, bit) for every signal.\npub static SIGNALS: &[(&str, &str, u64)] = &[\n");
+    for (n, d) in &signals {
+        writeln!(out, "    ({:?}, {:?}, {:#x}),", n, d, bit[n.as_str()]).unwrap();
+    }
+    out.push_str("];\n\n");
+
+    out.push_str("/// All compiled rules, sorted by id.\npub static RULES: &[Rule] = &[\n");
+    for r in &rules {
+        let sev = match r.severity.as_str() {
+            "caution" => "Verdict::Caution",
+            "danger" => "Verdict::Danger",
+            _ => unreachable!(),
+        };
+        writeln!(
+            out,
+            "    Rule {{ id: {:?}, title: {:?}, severity: {sev}, score: {}, all: {:#x}, any: {:#x}, none: {:#x}, match_any: &{:?}, allowlistable: {}, platforms: &{:?}, explain: {:?}, advice: {:?}, references: &{:?} }},",
+            r.id,
+            r.title,
+            r.score,
+            mask(&r.all, &r.id, "all"),
+            mask(&r.any, &r.id, "any"),
+            mask(&r.none, &r.id, "none"),
+            r.match_any,
+            r.allowlistable,
+            r.platforms,
+            r.explain,
+            r.advice,
+            r.references,
+        )
+        .unwrap();
+    }
+    out.push_str("];\n\n");
+
+    out.push_str("/// Inline rule test cases: (rule id, input, should_match).\n#[doc(hidden)]\npub static RULE_TESTS: &[(&str, &str, bool)] = &[\n");
+    for r in &rules {
+        for t in &r.test {
+            let input = t.input.repeat(t.repeat.unwrap_or(1).clamp(1, 10_000));
+            writeln!(
+                out,
+                "    ({:?}, {:?}, {}),",
+                r.id,
+                input,
+                t.expect == "match"
+            )
+            .unwrap();
+        }
+    }
+    out.push_str("];\n");
+
+    let dest = Path::new(&env::var("OUT_DIR").unwrap()).join("generated.rs");
+    fs::write(dest, out).unwrap();
+}
+
+fn validate(r: &RuleDef, ids: &mut BTreeSet<String>) {
+    let id = &r.id;
+    let ok_id =
+        id.len() == 5 && id.starts_with("PP") && id[2..].bytes().all(|b| b.is_ascii_digit());
+    if !ok_id {
+        fail(format!("rule id '{id}' must look like PP123"));
+    }
+    if !ids.insert(id.clone()) {
+        fail(format!("duplicate rule id {id}"));
+    }
+    if !matches!(r.severity.as_str(), "caution" | "danger") {
+        fail(format!("rule {id}: severity must be 'caution' or 'danger'"));
+    }
+    if r.score == 0 || r.score > 100 {
+        fail(format!("rule {id}: score must be 1..=100"));
+    }
+    if r.title.trim().is_empty() || r.explain.trim().is_empty() {
+        fail(format!("rule {id}: title and explain are required"));
+    }
+    if r.all.is_empty() && r.any.is_empty() && r.match_any.is_empty() {
+        fail(format!(
+            "rule {id}: needs at least one of all/any/match_any"
+        ));
+    }
+    for m in &r.match_any {
+        if m.is_empty() || *m != m.to_lowercase() {
+            fail(format!(
+                "rule {id}: match_any entries must be non-empty lowercase ('{m}')"
+            ));
+        }
+    }
+    for p in &r.platforms {
+        if !matches!(p.as_str(), "linux" | "macos" | "windows") {
+            fail(format!("rule {id}: unknown platform '{p}'"));
+        }
+    }
+    let pos = r.test.iter().filter(|t| t.expect == "match").count();
+    let neg = r.test.iter().filter(|t| t.expect == "no-match").count();
+    if pos + neg != r.test.len() {
+        fail(format!(
+            "rule {id}: test expect must be 'match' or 'no-match'"
+        ));
+    }
+    if pos == 0 || neg == 0 {
+        fail(format!(
+            "rule {id}: needs at least one 'match' and one 'no-match' test"
+        ));
+    }
+}

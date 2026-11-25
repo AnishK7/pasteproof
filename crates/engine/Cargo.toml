@@ -1,0 +1,25 @@
+[package]
+name = "pasteproof-engine"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Embeddable detection engine for ClickFix-style pasted-command attacks. No I/O, no network, no unsafe code."
+keywords.workspace = true
+categories = ["parser-implementations", "command-line-utilities"]
+build = "build.rs"
+
+[lib]
+name = "pasteproof_engine"
+
+# The engine has zero runtime dependencies. The rule compiler (build.rs)
+# uses toml + serde at build time only; nothing from them ships in binaries.
+[dependencies]
+
+[build-dependencies]
+serde = { version = "1", features = ["derive"] }
+toml = { version = "0.8", default-features = false, features = ["parse"] }
+
+[[example]]
+name = "bench"
