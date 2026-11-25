@@ -149,11 +149,9 @@ fn read_answer(tty: &std::fs::File, out: &mut std::fs::File) -> String {
                     let _ = out.write_all(b"\x08 \x08");
                 }
             }
-            b if b.is_ascii_graphic() || b == b' ' => {
-                if ans.len() < 32 {
-                    ans.push(b as char);
-                    let _ = out.write_all(&[b]);
-                }
+            b if (b.is_ascii_graphic() || b == b' ') && ans.len() < 32 => {
+                ans.push(b as char);
+                let _ = out.write_all(&[b]);
             }
             _ => {}
         }

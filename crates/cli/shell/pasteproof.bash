@@ -5,6 +5,9 @@
 # presses start no process at all. If pasteproof is missing or fails, the
 # line runs normally (fail open).
 
+# Single-quoted $ and \ in the pre-filter are literal patterns on purpose.
+# shellcheck disable=SC2016,SC1003
+
 if [[ $- == *i* && -z ${__PASTEPROOF_LOADED-} ]] && (( BASH_VERSINFO[0] >= 4 )); then
 __PASTEPROOF_LOADED=1
 __pasteproof_bin=${PASTEPROOF_BIN:-@PASTEPROOF_SELF@}
@@ -20,11 +23,11 @@ __pasteproof_check() {
   local l=${line,,}
   case $l in
     *curl*|*wget*|*fetch*|*aria2*|*://*|*base64*|*xxd*|*openssl*|*eval*|*source*|*'. '*|*'<('*|*'$('*|*'`'*|\
-    *iex*|*irm*|*iwr*|*invoke-*|*powershell*|*pwsh*|*-enc*|*mshta*|*rundll32*|*regsvr32*|*msiexec*|\
+    *iex*|*irm*|*iwr*|*invoke-*|*powershell*|*pwsh*|*-enc*|*mshta*|*rundll32*|*regsvr32*|\
     *certutil*|*bitsadmin*|*conhost*|*finger*|*nslookup*|*cmd*|*python*|*perl*|*ruby*|*node*|*php*|\
     *osascript*|*'| sh'*|*'|sh'*|*bash*|*zsh*|*crontab*|*autostart*|*systemd*|*launch*|*schtasks*|\
-    *bashrc*|*zshrc*|*profile*|*authorized_keys*|*xattr*|*spctl*|*setenforce*|*ufw*|*mppreference*|\
-    *'$ifs'*|*'${ifs}'*|*'\x'*|*'\'[a-z]*|*nc\ *|*ncat*|*socat*|*scp*|*.ssh*|*'^'*|*'#'*) ;;
+    *profile*|*authorized_keys*|*xattr*|*spctl*|*setenforce*|*ufw*|*mppreference*|\
+    *'$ifs'*|*'${ifs}'*|*'\'[a-z]*|*nc\ *|*ncat*|*socat*|*scp*|*.ssh*|*'^'*|*'#'*) ;;
     *)
       if [[ $line != *[![:ascii:]]* && $line != *$'\n'* && $line != *'                              '* ]]; then
         return 0
