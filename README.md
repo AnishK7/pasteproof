@@ -65,7 +65,7 @@ echo 'eval "$(pasteproof init bash)"' >> ~/.bashrc   # bash
 echo 'eval "$(pasteproof init zsh)"'  >> ~/.zshrc    # zsh
 ```
 
-Open a new terminal. Packages (deb, rpm, AUR, Homebrew) with signed checksums are
+Open a new terminal. Requires bash 4.0+ or zsh. macOS ships bash 3.2, so use zsh (the macOS default) or `brew install bash`. Packages (deb, rpm, AUR, Homebrew) with signed checksums are
 on the [roadmap](docs/ROADMAP.md).
 
 ## Use it directly
