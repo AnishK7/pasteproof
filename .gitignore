@@ -1,0 +1,16 @@
+/target/
+/fuzz/target/
+/fuzz/corpus/
+/fuzz/artifacts/
+**/*.rs.bk
+*.swp
+.DS_Store
+.idea/
+.vscode/
+# Never commit secrets or local environment files
+.env
+.env.*
+*.pem
+*.key
+id_*
+!id_*.pub
