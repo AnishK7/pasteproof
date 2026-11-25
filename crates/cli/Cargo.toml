@@ -1,0 +1,19 @@
+[package]
+name = "pasteproof"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+description = "Stops ClickFix-style 'paste this command' attacks in your terminal before they run."
+keywords.workspace = true
+categories.workspace = true
+
+[[bin]]
+name = "pasteproof"
+path = "src/main.rs"
+
+# No dependencies beyond the engine: hand-written argument parsing keeps the
+# binary small and startup instant.
+[dependencies]
+pasteproof-engine = { path = "../engine", version = "0.1.0" }
